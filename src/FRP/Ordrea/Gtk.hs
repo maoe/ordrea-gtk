@@ -9,9 +9,6 @@ module FRP.Ordrea.Gtk
   , defaultMain
 
   , on
-
-  , module FRP.Ordrea
-  , module GtkExport
   ) where
 import Control.Applicative
 import Control.Concurrent
@@ -20,7 +17,7 @@ import Control.Monad.Trans
 
 import FRP.Ordrea
 import FRP.Ordrea.IO
-import Graphics.UI.Gtk as GtkExport hiding (Signal, on)
+import Graphics.UI.Gtk hiding (Signal, on)
 import qualified Graphics.UI.Gtk as Gtk
 
 performGtk :: Event (IO a) -> SignalGen (Event a)
