@@ -67,13 +67,15 @@ liftGtk = liftIO . postGUISync
 liftGtkAsync :: MonadIO m => IO a -> m ()
 liftGtkAsync = liftIO . postGUIAsync . void
 
+type Sink m a = a -> m ()
+
 -- | Perform an action in response to a GTK signal.
 on
   :: MonadIO m
   => object
   -> Signal object (m a)
-  -> m a
-  -> Gtk (ConnectId object, Event a)
+  -> (Sink m b -> m a)
+  -> Gtk (ConnectId object, Event b)
 on object signal = connectSignal (Gtk.on object signal)
 
 -- | Perform an action in response to a GTK signal like @on@, but the signal
@@ -82,20 +84,17 @@ after
   :: MonadIO m
   => object
   -> Signal object (m a)
-  -> m a
-  -> Gtk (ConnectId object, Event a)
+  -> (Sink m b -> m a)
+  -> Gtk (ConnectId object, Event b)
 after object signal = connectSignal (Gtk.after object signal)
 
 connectSignal
   :: MonadIO m
   => (m a -> IO (ConnectId object))
-  -> m a
-  -> Gtk (ConnectId object, Event a)
+  -> (Sink m b -> m a)
+  -> Gtk (ConnectId object, Event b)
 connectSignal f callback = do
   extern <- liftIO newExternalEvent
-  connId <- liftGtk $ f $ do
-      a <- callback
-      liftIO $ triggerExternalEvent extern a
-      return a
+  connId <- liftGtk $ f $ callback $ liftIO . triggerExternalEvent extern
   event <- liftSGen $ externalE extern
   return (connId, event)
