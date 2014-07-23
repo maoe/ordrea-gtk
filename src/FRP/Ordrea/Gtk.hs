@@ -11,6 +11,7 @@ module FRP.Ordrea.Gtk
   , performGtk
   , performGtkAsync
 
+  , Sink
   , on
   , after
   ) where
