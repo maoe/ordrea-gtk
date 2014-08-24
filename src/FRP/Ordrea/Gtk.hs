@@ -9,6 +9,7 @@ module FRP.Ordrea.Gtk
   , liftGtkAsync
 
   , performGtk
+  , performGtkSync
   , performGtkAsync
 
   , Sink
@@ -52,12 +53,14 @@ defaultGtkMain gtk = do
   void . forkIO $ runGtk gtk
   mainGUI
 
-performGtk :: Event (IO a) -> Gtk ()
-performGtk = liftSGen . perform postGUISync >=> registerGtk
+performGtk :: (a -> IO b) -> Event a -> Gtk ()
+performGtk f = liftSGen . perform f >=> registerGtk
 
-performGtkAsync :: Event (IO a) -> Gtk ()
-performGtkAsync =
-  liftSGen . perform (postGUIAsync . void) >=> registerGtk
+performGtkSync :: Event (IO a) -> Gtk ()
+performGtkSync = performGtk postGUISync
+
+performGtkAsync :: Event (IO ()) -> Gtk ()
+performGtkAsync = performGtk postGUIAsync
 
 registerGtk :: Event a -> Gtk ()
 registerGtk event = tell $ () <$ event
@@ -65,8 +68,8 @@ registerGtk event = tell $ () <$ event
 liftGtk :: MonadIO m => IO a -> m a
 liftGtk = liftIO . postGUISync
 
-liftGtkAsync :: MonadIO m => IO a -> m ()
-liftGtkAsync = liftIO . postGUIAsync . void
+liftGtkAsync :: MonadIO m => IO () -> m ()
+liftGtkAsync = liftIO . postGUIAsync
 
 type Sink m a = a -> m ()
 

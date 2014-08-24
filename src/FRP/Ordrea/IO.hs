@@ -1,7 +1,7 @@
 module FRP.Ordrea.IO
   ( perform
-  , performIO
-  , performIOAsync
+  , performSync
+  , performAsync
   ) where
 import Control.Applicative
 import Control.Concurrent
@@ -15,16 +15,16 @@ import FRP.Ordrea
 perform :: (a -> IO b) -> Event a -> SignalGen (Event b)
 perform f event = generatorE $ liftIO . f <$> event
 
-performIO :: Event (IO a) -> SignalGen (Event a)
-performIO = perform id
+performSync :: Event (IO a) -> SignalGen (Event a)
+performSync = perform id
 
-performIOAsync :: Event (IO a) -> SignalGen (Event a)
-performIOAsync ioE = do
+performAsync :: Event (IO a) -> SignalGen (Event a)
+performAsync ioE = do
   extE <- liftIO newExternalEvent
   chan <- liftIO newChan
   liftIO $ void . forkIO $
     join (readChan chan) >>= triggerExternalEvent extE
-  writeE <- performIO $ writeChan chan <$> ioE
+  writeE <- performSync $ writeChan chan <$> ioE
   resultE <- externalE extE
   return $ justE $ mconcat
     [ Nothing <$ writeE
